@@ -1,0 +1,31 @@
+{
+  "name": "dify-rag-tests",
+  "version": "1.0.0",
+  "description": "Beginner-friendly end-to-end tests for a Dify RAG chatbot",
+  "scripts": {
+    "test": "playwright test",
+    "test:retrieval": "playwright test tests/1-retrieval.spec.ts",
+    "test:chatbot": "playwright test tests/2-chatbot.spec.ts",
+    "report": "playwright show-report --host 0.0.0.0",
+    "test:judge": "promptfoo eval -c promptfooconfig.yaml --no-cache",
+    "judge:view": "promptfoo view --port 15500"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Bassaganas/dify-rag-tests.git"
+  },
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/Bassaganas/dify-rag-tests/issues"
+  },
+  "homepage": "https://github.com/Bassaganas/dify-rag-tests#readme",
+  "private": true,
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "dotenv": "^18.0.4",
+    "promptfoo": "^0.123.1"
+  },
+  "engines": {
+    "node": ">=22.22.0"
+  }
+}

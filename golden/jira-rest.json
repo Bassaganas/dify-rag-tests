@@ -1,0 +1,76 @@
+{
+  "description": "Golden dataset for the Jira REST knowledge base (Testus Patronus workshop). Each case is: a question, what a correct answer must contain, and which document must be the source.",
+  "retrieval": [
+    {
+      "name": "exact issue wording finds REST-266 first",
+      "query": "REST-266 Default Jackson configuration unknown properties",
+      "expectedIssue": "REST-266",
+      "maxRank": 1
+    },
+    {
+      "name": "natural question finds REST-266 first",
+      "query": "Which issue creates a backward-compatibility risk when unknown JSON properties are accepted?",
+      "expectedIssue": "REST-266",
+      "maxRank": 1
+    },
+    {
+      "name": "vague question still finds REST-266 in the top 3",
+      "query": "Which Jira work has important test implications for REST API compatibility?",
+      "expectedIssue": "REST-266",
+      "maxRank": 3
+    }
+  ],
+  "retrievalNoMatch": [
+    {
+      "name": "unrelated question returns no chunks",
+      "query": "Why is the sky blue?"
+    }
+  ],
+  "grounded": [
+    {
+      "name": "explains what REST-266 is about",
+      "query": "What is REST-266 about?",
+      "mustMention": ["REST-266"],
+      "expectedIssue": "REST-266"
+    },
+    {
+      "name": "finds the Jackson unknown-properties issue",
+      "query": "Which issue is about the default Jackson configuration erroring out on unknown properties?",
+      "mustMention": ["REST-266"],
+      "expectedIssue": "REST-266"
+    },
+    {
+      "name": "finds the CORS preflight issue",
+      "query": "Which issue reports that CORS preflight requests are not supported?",
+      "mustMention": ["REST-366"],
+      "expectedIssue": "REST-366"
+    },
+    {
+      "name": "knows who reported REST-266",
+      "query": "Who reported REST-266?",
+      "mustMention": ["Luis Miranda"],
+      "expectedIssue": "REST-266"
+    },
+    {
+      "name": "knows who is assigned to REST-432",
+      "query": "Who is the assignee of REST-432?",
+      "mustMention": ["Marek Tokarski"],
+      "expectedIssue": "REST-432"
+    }
+  ],
+  "refusals": [
+    {
+      "name": "refuses a question outside the project",
+      "query": "Why is the sky blue?",
+      "expectedReply": "I[’']m sorry, I can[’']t find relevant information",
+      "expectNoCitations": true
+    },
+    {
+      "name": "does not invent an issue that does not exist",
+      "query": "Summarize REST-999",
+      "expectedReply": "I[’']m sorry, I can[’']t find details about that specific issue",
+      "expectNoCitations": false
+    }
+  ],
+  "latencyBudgetSeconds": 30
+}
