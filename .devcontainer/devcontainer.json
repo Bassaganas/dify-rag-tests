@@ -7,9 +7,8 @@
       "extensions": ["ms-playwright.playwright"]
     }
   },
-  "forwardPorts": [9323, 15500],
+  "forwardPorts": [9323],
   "portsAttributes": {
-    "9323": { "label": "Playwright report" },
-    "15500": { "label": "promptfoo viewer" }
+    "9323": { "label": "Playwright report" }
   }
 }

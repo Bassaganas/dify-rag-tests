@@ -66,7 +66,7 @@ test.describe('Level 2 – Chatbot answers', () => {
       });
 
       await test.step('Then the chatbot politely says it cannot find it', async () => {
-        expect(reply.answer).toMatch(new RegExp(c.expectedReply, 'i'));
+        expect(reply.answer).toMatch(new RegExp(golden.refusalPattern, 'i'));
       });
 
       await test.step('And it does not make up any Jira issue', async () => {

@@ -7,8 +7,7 @@
     "test:retrieval": "playwright test tests/1-retrieval.spec.ts",
     "test:chatbot": "playwright test tests/2-chatbot.spec.ts",
     "report": "playwright show-report --host 0.0.0.0",
-    "test:judge": "promptfoo eval -c promptfooconfig.yaml --no-cache",
-    "judge:view": "promptfoo view --port 15500"
+    "test:judge": "playwright test tests/3-judge.spec.ts"
   },
   "repository": {
     "type": "git",
@@ -22,10 +21,9 @@
   "private": true,
   "devDependencies": {
     "@playwright/test": "^1.63.0",
-    "dotenv": "^18.0.4",
-    "promptfoo": "^0.123.1"
+    "dotenv": "^18.0.4"
   },
   "engines": {
-    "node": ">=22.22.0"
+    "node": ">=20"
   }
 }

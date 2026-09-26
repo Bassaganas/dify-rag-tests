@@ -1,4 +1,4 @@
-import { APIRequestContext, test } from '@playwright/test';
+import { APIRequestContext, APIResponse, test } from '@playwright/test';
 
 // Small wrappers around the two Dify endpoints we test.
 // Docs: https://docs.dify.ai/en/api-reference/guides/chat
@@ -26,19 +26,32 @@ export type RetrievedChunk = {
 
 /** Skip the current test with a helpful message when a setting is missing from .env */
 export function requireEnv(...names: string[]) {
-  const missing = names.filter((n) => !process.env[n] || process.env[n]!.includes('xxxx'));
+  const isPlaceholder = (v: string) => v.includes('xxxx') || v.includes('<your-') || /^[0-]+$/.test(v);
+  const missing = names.filter((n) => !process.env[n] || isPlaceholder(process.env[n]!));
   test.skip(missing.length > 0, `Fill in ${missing.join(', ')} in your .env file (see .env.example)`);
 }
 
-/** POST with a retry when Dify answers 429 (too many requests at once) */
+/**
+ * Errors that say nothing about answer quality: too many requests, a server hiccup, or the
+ * shared LLM being rate limited. We wait and try again instead of failing the test.
+ */
+async function isTemporaryError(res: APIResponse) {
+  if (res.status() === 429 || res.status() >= 500) return true;
+  if (res.status() !== 400) return false;
+  const body = await res.text();
+  return /completion_request_error|rate.?limit|quota|timeout/i.test(body);
+}
+
 async function post(request: APIRequestContext, path: string, key: string, data: object) {
-  for (let attempt = 1; ; attempt++) {
+  const waits = [5_000, 15_000]; // wait 5 s before attempt 2 and 15 s before attempt 3
+  for (let attempt = 0; ; attempt++) {
     const res = await request.post(`${BASE_URL}${path}`, {
       headers: { Authorization: `Bearer ${key}` },
       data,
+      timeout: 60_000,
     });
-    if (res.status() !== 429 || attempt === 3) return res;
-    await new Promise((r) => setTimeout(r, 2000 * attempt));
+    if (attempt === waits.length || !(await isTemporaryError(res))) return res;
+    await new Promise((r) => setTimeout(r, waits[attempt]));
   }
 }
 
@@ -74,12 +87,44 @@ export async function retrieve(request: APIRequestContext, query: string) {
   });
 }
 
-/** Jira keys such as REST-266 mentioned in a text */
+/** Jira keys such as REST-266 mentioned in a text (only the workshop's Jira projects, so "UTF-8" is ignored) */
 export function issueKeys(text: string): string[] {
-  return [...new Set(text.match(/\b[A-Z]+-\d+\b/g) ?? [])];
+  return [...new Set(text.match(/\b(?:REST|WEBHOOKS|VOTE|TOC|QUID)-\d+\b/g) ?? [])];
 }
 
 /** Does this chunk/citation belong to the given Jira issue? Works for API- and UI-ingested documents */
 export function isAbout(issue: string, name: string, content: string) {
   return name.includes(issue) || content.includes(`Jira Issue: ${issue}`);
+}
+
+export type Verdict = { verdict: 'PASS' | 'FAIL'; reasoning: string; raw: string };
+
+/**
+ * Ask the "Exercise 5: RAG Judge" Dify workflow to grade ONE criterion of an answer.
+ * The judge replies with JSON: {"reasoning": "...", "verdict": "PASS" | "FAIL"}
+ */
+export async function judge(
+  request: APIRequestContext,
+  input: { criterion: string; question: string; answer: string; context?: string; reference?: string },
+): Promise<Verdict> {
+  const res = await post(request, '/workflows/run', process.env.DIFY_JUDGE_KEY!, {
+    inputs: { context: '', reference: '', ...input },
+    response_mode: 'blocking',
+    user: TEST_USER,
+  });
+  const body = await res.json();
+  if (res.status() !== 200 || body.data?.status !== 'succeeded') {
+    throw new Error(`Judge workflow failed (HTTP ${res.status()}): ${JSON.stringify(body).slice(0, 500)}`);
+  }
+  const raw: string = body.data.outputs.result ?? '';
+  // LLMs sometimes wrap JSON in ```json fences or add text around it: take the first {...} block
+  const json = raw.match(/\{[\s\S]*\}/)?.[0];
+  try {
+    const parsed = JSON.parse(json ?? '');
+    const verdict = String(parsed.verdict).toUpperCase() === 'PASS' ? 'PASS' : 'FAIL';
+    return { verdict, reasoning: String(parsed.reasoning ?? ''), raw };
+  } catch {
+    // An unreadable verdict counts as FAIL, so the test shows the judge's raw reply
+    return { verdict: 'FAIL', reasoning: `Could not read the judge's reply as JSON`, raw };
+  }
 }
