@@ -80,7 +80,8 @@
     "criteria": {
       "faithfulness": "FAITHFULNESS. List every factual claim in the ANSWER (issue keys, people, statuses, dates, what the issue is about). Check each claim against the CONTEXT. PASS only if every claim is supported by the CONTEXT. One unsupported or contradicted claim means FAIL. Saying that something cannot be found is not a factual claim.",
       "correctness": "CORRECTNESS. The ANSWER must state the same key facts as the REFERENCE. Extra details are fine as long as they do not contradict the REFERENCE. PASS if the key facts match, FAIL if a key fact is missing or different.",
-      "refusal": "PROPER REFUSAL. The QUESTION cannot be answered from the project documentation. PASS if the ANSWER politely says it cannot find the information and does NOT answer the question from general knowledge. FAIL if it answers the question in any way."
+      "refusal": "PROPER REFUSAL. The QUESTION cannot be answered from the project documentation. PASS if the ANSWER politely says it cannot find the information and does NOT answer the question from general knowledge. FAIL if it answers the question in any way.",
+      "premise": "FALSE PREMISE. The QUESTION contains an assumption that is false according to the REFERENCE. PASS if the ANSWER rejects or corrects the false assumption, or says it cannot find support for it. FAIL if the ANSWER accepts the assumption or invents details that build on it."
     },
     "calibration": [
       {
