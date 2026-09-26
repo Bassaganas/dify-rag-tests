@@ -37,6 +37,7 @@ jobs:
       DIFY_DATASET_KEY: ${{ secrets.DIFY_DATASET_KEY }}
       DIFY_DATASET_ID: ${{ secrets.DIFY_DATASET_ID }}
       DIFY_JUDGE_KEY: ${{ secrets.DIFY_JUDGE_KEY }}
+      DIFY_ADVISOR_KEY: ${{ secrets.DIFY_ADVISOR_KEY }}
       DASHBOARD_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/
     steps:
       - uses: actions/checkout@v7
@@ -60,6 +61,7 @@ jobs:
             exit 1
           fi
           [ -z "$DIFY_JUDGE_KEY" ] && echo "::notice title=Judge not configured::Add DIFY_JUDGE_KEY to run the LLM-as-a-judge tests" || true
+          [ -z "$DIFY_ADVISOR_KEY" ] && echo "::notice title=Advisor not configured::Add DIFY_ADVISOR_KEY to get AI recommendations" || true
 
       - name: Run tests
         id: tests
@@ -84,6 +86,29 @@ jobs:
         env:
           RUN_NOTE: ${{ inputs.note }}
 
+      - name: Load earlier runs from the dashboard
+        if: always()
+        run: |
+          mkdir site
+          if git fetch --depth=1 origin gh-pages 2>/dev/null; then
+            git archive FETCH_HEAD | tar -x -C site
+          fi
+
+      - name: AI recommendations
+        if: always() && env.DIFY_ADVISOR_KEY != ''
+        continue-on-error: true # a failing advisor must not hide the test results
+        run: |
+          node scripts/advise.mjs results.json site/history.json "$RUN_NOTE" > advice.md
+          {
+            echo "## 🧭 AI recommendations"
+            echo
+            cat advice.md
+            echo
+            echo "_Written by the Exercise 5 Test Advisor (an LLM in your Dify). Check the evidence before acting on it._"
+          } >> "$GITHUB_STEP_SUMMARY"
+        env:
+          RUN_NOTE: ${{ inputs.note }}
+
       - name: Keep the Playwright report as a download
         if: always()
         uses: actions/upload-artifact@v7
@@ -94,19 +119,14 @@ jobs:
 
       - name: Add this run to the dashboard
         if: always()
-        run: |
-          # Start from the published site so earlier runs are kept
-          mkdir site
-          if git fetch --depth=1 origin gh-pages 2>/dev/null; then
-            git archive FETCH_HEAD | tar -x -C site
-          fi
-          node scripts/dashboard.mjs site results.json playwright-report
+        run: node scripts/dashboard.mjs site results.json playwright-report
         env:
           RUN_NUMBER: ${{ github.run_number }}
           RUN_NOTE: ${{ inputs.note }}
           RUN_SUITE: ${{ inputs.suite }}
           RUN_REPEAT: ${{ inputs.repeat }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          ADVICE_FILE: advice.md
 
       - name: Publish the dashboard to GitHub Pages
         if: always()

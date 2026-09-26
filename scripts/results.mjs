@@ -30,6 +30,8 @@ export function readResults(file) {
           judge: '',
           error: '',
           failedAnswer: '',
+          why: '',
+          truth: '',
         };
         // With --repeat-each every repetition is its own entry; retries live inside `results`
         if (t.status === 'skipped') row.skipped++;
@@ -42,6 +44,8 @@ export function readResults(file) {
         const notes = [...(last?.annotations ?? []), ...(t.annotations ?? [])];
         row.answer ||= notes.find((a) => a.type === 'answer')?.description ?? '';
         row.judge ||= notes.find((a) => a.type.startsWith('judge:'))?.type.replace('judge: ', '') ?? '';
+        row.why ||= notes.find((a) => a.type === 'why it is hard')?.description ?? '';
+        row.truth ||= notes.find((a) => a.type === 'truth')?.description ?? '';
         if (t.status === 'unexpected' && !row.error) {
           row.error = (last?.errors?.[0]?.message ?? '').replace(/\u001b\[[0-9;]*m/g, '').split('\n')[0];
           row.failedAnswer = notes.find((a) => a.type === 'answer')?.description ?? '';
