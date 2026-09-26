@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { golden } from './golden';
-import { isAbout, requireEnv, retrieve, RetrievedChunk } from './helpers/dify';
+import { expectOk, isAbout, requireEnv, retrieve, RetrievedChunk } from './helpers/dify';
 
 // LEVEL 1 – RETRIEVAL
 // Does the knowledge base find the right Jira issue? No LLM is involved, so these tests are
@@ -17,7 +17,7 @@ test.describe('Level 1 – Knowledge retrieval', () => {
 
       await test.step(`When I search for "${c.query}"`, async () => {
         const res = await retrieve(request, c.query);
-        expect(res.status(), await res.text()).toBe(200);
+        await expectOk(res);
         chunks = (await res.json()).records;
       });
 

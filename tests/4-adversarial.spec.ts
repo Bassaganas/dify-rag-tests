@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { expect, test } from '@playwright/test';
 import { golden } from './golden';
-import { ask, ChatResponse, judge, requireEnv } from './helpers/dify';
+import { ask, ChatResponse, expectOk, judge, requireEnv } from './helpers/dify';
 
 // ADVERSARIAL SUITE – try to make the chatbot fail
 // Each case targets one known weakness of RAG systems (similar documents, counting, false
@@ -33,7 +33,7 @@ test.describe('Adversarial – try to break the chatbot', () => {
 
       await test.step(`When I ask "${c.query}"`, async () => {
         const res = await ask(request, c.query);
-        expect(res.status(), await res.text()).toBe(200);
+        await expectOk(res);
         reply = await res.json();
         test.info().annotations.push({ type: 'answer', description: reply.answer });
       });

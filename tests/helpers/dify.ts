@@ -1,4 +1,4 @@
-import { APIRequestContext, APIResponse, test } from '@playwright/test';
+import { APIRequestContext, expect, test } from '@playwright/test';
 
 // Small wrappers around the two Dify endpoints we test.
 // Docs: https://docs.dify.ai/en/api-reference/guides/chat
@@ -35,21 +35,34 @@ export function requireEnv(...names: string[]) {
  * Errors that say nothing about answer quality: too many requests, a server hiccup, or the
  * shared LLM being rate limited. We wait and try again instead of failing the test.
  */
-async function isTemporaryError(res: APIResponse) {
+async function isTemporaryError(res: ApiResponse) {
   if (res.status() === 429 || res.status() >= 500) return true;
   if (res.status() !== 400) return false;
   const body = await res.text();
   return /completion_request_error|rate.?limit|quota|timeout/i.test(body);
 }
 
-async function post(request: APIRequestContext, path: string, key: string, data: object) {
+export type ApiResponse = { status(): number; text(): Promise<string>; json(): Promise<any> };
+
+// We call Dify with Node's fetch instead of Playwright's `request` on purpose: Playwright would list
+// every call with its full URL in the HTML report, and that report is published on GitHub Pages.
+// This way your Dify address never appears in the public report. (`request` is kept in the signatures
+// so the tests read like normal Playwright API tests.)
+async function send(path: string, key: string, data: object): Promise<ApiResponse> {
+  const res = await fetch(`${BASE_URL}${path}`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+    signal: AbortSignal.timeout(60_000),
+  });
+  const body = await res.text();
+  return { status: () => res.status, text: async () => body, json: async () => JSON.parse(body) };
+}
+
+async function post(_request: APIRequestContext, path: string, key: string, data: object) {
   const waits = [5_000, 15_000]; // wait 5 s before attempt 2 and 15 s before attempt 3
   for (let attempt = 0; ; attempt++) {
-    const res = await request.post(`${BASE_URL}${path}`, {
-      headers: { Authorization: `Bearer ${key}` },
-      data,
-      timeout: 60_000,
-    });
+    const res = await send(path, key, data);
     if (attempt === waits.length || !(await isTemporaryError(res))) return res;
     await new Promise((r) => setTimeout(r, waits[attempt]));
   }
@@ -127,4 +140,10 @@ export async function judge(
     // An unreadable verdict counts as FAIL, so the test shows the judge's raw reply
     return { verdict: 'FAIL', reasoning: `Could not read the judge's reply as JSON`, raw };
   }
+}
+
+/** Expect HTTP 200. The response body is only shown when Dify returns an error (keeps the public report small). */
+export async function expectOk(res: ApiResponse) {
+  const status = res.status();
+  expect(status, status === 200 ? 'Dify answered' : `Dify returned an error: ${await res.text()}`).toBe(200);
 }

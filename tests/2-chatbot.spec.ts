@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { golden } from './golden';
-import { ask, ChatResponse, isAbout, issueKeys, requireEnv } from './helpers/dify';
+import { ask, ChatResponse, expectOk, isAbout, issueKeys, requireEnv } from './helpers/dify';
 
 // LEVEL 2 – THE CHATBOT END TO END
 // We ask the published Exercise 3 app real questions and check PROPERTIES of the answer
@@ -22,7 +22,7 @@ test.describe('Level 2 – Chatbot answers', () => {
 
       await test.step(`When I ask "${c.query}"`, async () => {
         const res = await ask(request, c.query);
-        expect(res.status(), await res.text()).toBe(200);
+        await expectOk(res);
         reply = await res.json();
         test.info().annotations.push({ type: 'answer', description: reply.answer });
       });
@@ -60,7 +60,7 @@ test.describe('Level 2 – Chatbot answers', () => {
 
       await test.step(`When I ask "${c.query}"`, async () => {
         const res = await ask(request, c.query);
-        expect(res.status(), await res.text()).toBe(200);
+        await expectOk(res);
         reply = await res.json();
         test.info().annotations.push({ type: 'answer', description: reply.answer });
       });
