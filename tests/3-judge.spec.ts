@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { golden } from './golden';
-import { ask, ChatResponse, judge, requireEnv, Verdict } from './helpers/dify';
+import { ask, ChatResponse, expectOk, judge, requireEnv, Verdict } from './helpers/dify';
 
 // LEVEL 3 – LLM-AS-A-JUDGE
 // Some qualities can't be checked with "contains": is every claim in the answer supported by the
@@ -45,7 +45,7 @@ test.describe('Level 3B – Judge the chatbot', () => {
 
       await test.step(`When I ask the chatbot "${c.query}"`, async () => {
         const res = await ask(request, c.query);
-        expect(res.status(), await res.text()).toBe(200);
+        await expectOk(res);
         reply = await res.json();
         test.info().annotations.push({ type: 'answer', description: reply.answer });
       });
