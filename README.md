@@ -10,7 +10,46 @@ Follow the full walkthrough in the workshop docs: **Exercise 5 – Test your RAG
 | 3 – LLM-as-a-judge | 3A: the judge grades answers whose verdict we know (calibration). 3B: the judge grades the chatbot's faithfulness, correctness and refusals | Playwright + a Dify judge workflow | Uses the model already configured in your Dify |
 | Adversarial | 22 questions designed to break the chatbot (similar issues, counting, false premises, prompt injection…). Red = finding. See [ADVERSARIAL.md](ADVERSARIAL.md) | Playwright (+ judge) | Optional |
 
-## Quick start (GitHub Codespaces)
+## Run it from GitHub Actions (nothing to install)
+
+Every student gets their own copy of this repository and runs the tests against **their own Dify** with a
+button click. Results appear on the run page and on a dashboard that keeps **all your runs side by side**, so
+you can see what changed after each tweak to your Exercise 3 chatbot.
+
+**One-time setup (5 minutes)**
+
+1. Click **Use this template → Create a new repository**. Make it **public** (GitHub Pages is free for public
+   repositories). Your keys stay private: they are stored as encrypted secrets, never in the code or the report.
+2. In your new repository go to **Settings → Secrets and variables → Actions → New repository secret** and add:
+
+   | Secret | Value |
+   |---|---|
+   | `DIFY_BASE_URL` | `https://dify-<your-instance>.testingfantasy.com/v1` |
+   | `DIFY_APP_KEY` | App API key of your Exercise 3 chatbot (`app-…`) |
+   | `DIFY_DATASET_KEY` | Knowledge API key (`dataset-…`) |
+   | `DIFY_DATASET_ID` | ID of your `Jira_API_*` knowledge base |
+   | `DIFY_JUDGE_KEY` | Optional: API key of the Exercise 5 judge workflow (`app-…`) |
+
+3. Go to **Actions → RAG tests → Run workflow**. Describe what you are testing (for example `baseline`),
+   pick the suite and click **Run workflow**.
+4. After the first run finishes: **Settings → Pages → Build and deployment → Deploy from a branch →
+   `gh-pages` / `(root)` → Save**. A minute later your dashboard is live at
+   `https://<your-user>.github.io/<your-repo>/`.
+
+**Every time you change your chatbot**
+
+Change something in Exercise 3 (model, prompt, retrieval settings, knowledge base), **publish** it in Dify, and
+run the workflow again with a note describing the change. Then look at:
+
+- the **run page** – a summary table with every test and the chatbot's answer;
+- the **dashboard** – one column per run, so you see which tests turned green or red;
+- the **Playwright report** of each run (linked from the dashboard) – every Given/When/Then step, the answer,
+  and the judge's reasoning.
+
+Only the regression suite decides whether the run is green or red: red tests in the adversarial suite are
+findings about your chatbot, not errors.
+
+## Run it yourself (GitHub Codespaces or your laptop)
 
 1. Click **Code → Codespaces → Create codespace on main**. Dependencies install automatically.
 2. Open `.env` (created for you from `.env.example`) and fill in your values.
