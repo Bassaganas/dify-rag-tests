@@ -1,0 +1,110 @@
+name: Promptfoo
+
+# The same chatbot checks as Level 2 and 3, written as a Promptfoo test table (promptfoo/promptfooconfig.yaml).
+# Run it from the Actions tab: "Promptfoo" → "Run workflow".
+# Results: the run's summary page, and the full report on your GitHub Pages site under /promptfoo/.
+on:
+  workflow_dispatch:
+    inputs:
+      note:
+        description: What are you testing? (shown in the summary)
+        required: true
+        default: baseline
+      compare:
+        description: Also test the Exercise 4 chatbot (needs the DIFY_APP_KEY_EX4 secret)
+        type: boolean
+        default: false
+      repeat:
+        description: How many times to ask each question (LLM answers vary – 3 shows flakiness)
+        type: choice
+        options: ['1', '3']
+        default: '1'
+
+permissions:
+  contents: write # publish the report to the gh-pages branch
+
+concurrency:
+  group: rag-tests # shares your Dify and the gh-pages branch with the "RAG tests" workflow
+  cancel-in-progress: false
+
+jobs:
+  promptfoo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      DIFY_BASE_URL: ${{ secrets.DIFY_BASE_URL }}
+      DIFY_APP_KEY: ${{ secrets.DIFY_APP_KEY }}
+      DIFY_APP_KEY_EX4: ${{ secrets.DIFY_APP_KEY_EX4 }}
+      DIFY_JUDGE_KEY: ${{ secrets.DIFY_JUDGE_KEY }}
+      PROMPTFOO_DISABLE_TELEMETRY: '1'
+      PROMPTFOO_DISABLE_UPDATE: '1'
+      REPORT_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/promptfoo/run-${{ github.run_number }}/
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Check your secrets
+        run: |
+          missing=""
+          for name in DIFY_BASE_URL DIFY_APP_KEY; do
+            [ -z "${!name}" ] && missing="$missing $name"
+          done
+          if [ "$COMPARE" = "true" ] && [ -z "$DIFY_APP_KEY_EX4" ]; then missing="$missing DIFY_APP_KEY_EX4"; fi
+          if [ -n "$missing" ]; then
+            echo "::error title=Missing secrets::Add these in Settings → Secrets and variables → Actions:$missing"
+            exit 1
+          fi
+          [ -z "$DIFY_JUDGE_KEY" ] && echo "::notice title=Judge not configured::Add DIFY_JUDGE_KEY to grade faithfulness, correctness and refusals" || true
+        env:
+          COMPARE: ${{ inputs.compare }}
+
+      - name: Run Promptfoo
+        continue-on-error: true # we still want the summary and the report when checks fail
+        run: |
+          filter=""
+          [ "$COMPARE" = "true" ] || filter="--filter-providers Exercise.3"
+          npm run promptfoo:ci -- $filter --repeat "$REPEAT" -o promptfoo-results.json promptfoo-report.html
+        env:
+          COMPARE: ${{ inputs.compare }}
+          REPEAT: ${{ inputs.repeat }}
+
+      - name: Summary
+        if: always()
+        run: node promptfoo/summary.mjs promptfoo-results.json "$RUN_NOTE" "$REPORT_URL" >> "$GITHUB_STEP_SUMMARY"
+        env:
+          RUN_NOTE: ${{ inputs.note }}
+
+      - name: Prepare the report
+        if: always()
+        run: mkdir -p site/promptfoo/run-${{ github.run_number }} && cp promptfoo-report.html site/promptfoo/run-${{ github.run_number }}/index.html
+
+      - name: Keep the report as a download
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: promptfoo-report-${{ github.run_number }}
+          path: |
+            promptfoo-report.html
+            promptfoo-results.json
+          retention-days: 30
+
+      - name: Publish the report to GitHub Pages
+        if: always()
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./site
+          keep_files: true # keep the RAG tests dashboard and earlier reports
+          commit_message: 'Promptfoo run #${{ github.run_number }}'
+
+      - name: Result
+        if: always()
+        run: |
+          echo "Report: $REPORT_URL"
+          node -e "
+            const s = require('./promptfoo-results.json').results.stats;
+            if (s.failures || s.errors) { console.log('::error::' + s.failures + ' check(s) failed, ' + s.errors + ' error(s)'); process.exit(1); }
+          "

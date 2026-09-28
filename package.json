@@ -8,7 +8,11 @@
     "test:chatbot": "playwright test --project=regression tests/2-chatbot.spec.ts",
     "report": "playwright show-report --host 0.0.0.0",
     "test:judge": "playwright test --project=regression tests/3-judge.spec.ts",
-    "test:adversarial": "playwright test --project=adversarial"
+    "test:adversarial": "playwright test --project=adversarial",
+    "promptfoo": "npx -y promptfoo@0.123.1 eval -c promptfoo/promptfooconfig.yaml --no-cache --filter-providers Exercise.3",
+    "promptfoo:compare": "npx -y promptfoo@0.123.1 eval -c promptfoo/promptfooconfig.yaml --no-cache",
+    "promptfoo:view": "npx -y promptfoo@0.123.1 view --yes",
+    "promptfoo:ci": "npx -y promptfoo@0.123.1 eval -c promptfoo/promptfooconfig.yaml --no-cache --no-table"
   },
   "repository": {
     "type": "git",

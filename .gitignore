@@ -4,3 +4,5 @@ playwright-report/
 test-results/
 results.json
 site/
+promptfoo-results.json
+promptfoo-report.html

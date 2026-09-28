@@ -1,0 +1,98 @@
+# yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
+#
+# Exercise 5 – the chatbot checks, written as a Promptfoo test table.
+#
+# Each test is a question plus a list of checks ("assert"). Promptfoo sends every question to
+# every chatbot in `providers` and shows a table: one row per question, one column per chatbot.
+#
+#   npm run promptfoo            → test your Exercise 3 chatbot (DIFY_APP_KEY)
+#   npm run promptfoo:compare    → Exercise 3 and Exercise 4 side by side (also needs DIFY_APP_KEY_EX4)
+#   npm run promptfoo:view       → open the results in your browser
+#
+# Check types used here:
+#   icontains  – built-in: the answer contains this text (case-insensitive)
+#   latency    – built-in: the answer arrived within N milliseconds
+#   javascript – our own checks in checks.mjs (citations, invented issues, and the LLM judge)
+
+description: Exercise 5 – RAG chatbot checks (Promptfoo)
+
+# The question is sent as-is: the prompt itself lives inside your Dify app
+prompts:
+  - '{{question}}'
+
+providers:
+  - id: file://dify-chatbot.mjs
+    label: Exercise 3 chatbot
+    config: { keyEnv: DIFY_APP_KEY }
+  - id: file://dify-chatbot.mjs
+    label: Exercise 4 chatbot
+    config: { keyEnv: DIFY_APP_KEY_EX4 }
+
+# One question at a time: the whole class shares the same Dify and LLM quota
+evaluateOptions:
+  maxConcurrency: 1
+
+# Checks that run on every answer
+defaultTest:
+  assert:
+    - type: latency
+      threshold: 30000
+    - type: javascript
+      value: file://checks.mjs:noInventedIssues
+
+tests:
+  - description: Grounded – explains what REST-266 is about
+    vars:
+      question: What is REST-266 about?
+      issue: REST-266
+    assert:
+      - type: icontains
+        value: REST-266
+      - type: javascript
+        value: file://checks.mjs:citesIssue
+      - type: javascript
+        value: file://checks.mjs:faithful
+
+  - description: Grounded – knows who reported REST-266
+    vars:
+      question: Who reported REST-266?
+      issue: REST-266
+      reference: REST-266 was reported by Luis Miranda.
+    assert:
+      - type: icontains
+        value: Luis Miranda
+      - type: javascript
+        value: file://checks.mjs:citesIssue
+      - type: javascript
+        value: file://checks.mjs:correct
+
+  - description: Grounded – finds the CORS preflight issue without a key
+    vars:
+      question: Which issue reports that CORS preflight requests are not supported?
+      issue: REST-366
+    assert:
+      - type: icontains
+        value: REST-366
+      - type: javascript
+        value: file://checks.mjs:citesIssue
+      - type: javascript
+        value: file://checks.mjs:faithful
+
+  - description: Refusal – a question outside the project
+    vars:
+      question: Why is the sky blue?
+    assert:
+      - type: javascript
+        value: file://checks.mjs:saysCannotFind
+      - type: javascript
+        value: file://checks.mjs:citesNothing
+      - type: javascript
+        value: file://checks.mjs:refuses
+
+  - description: Refusal – an issue that does not exist
+    vars:
+      question: Summarize REST-999
+      ignore: [REST-999]
+    assert:
+      - type: javascript
+        value: file://checks.mjs:saysCannotFind
