@@ -61,6 +61,9 @@ jobs:
           fi
           [ -z "$DIFY_JUDGE_KEY" ] && echo "::notice title=Judge not configured::Add DIFY_JUDGE_KEY to run the LLM-as-a-judge tests" || true
 
+      - name: Check that GitHub can reach your Dify
+        run: .github/reach-dify.sh
+
       - name: Run tests
         id: tests
         continue-on-error: true # we still want the report when tests fail
