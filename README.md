@@ -111,6 +111,7 @@ Add a new test case by adding an entry to `golden/jira-rest.json` – no code ne
 | Symptom | Fix |
 |---|---|
 | Tests are **skipped** | A value in `.env` is missing or still a placeholder |
+| **Cannot reach Dify**, or `fetch failed` / `Could not reach Dify` | `DIFY_BASE_URL` points at an instance that is stopped or no longer yours (workshop instances are temporary). Update the `DIFY_*` secrets to your current Dify |
 | `401` *Authorization header must be provided* | `DIFY_BASE_URL` starts with `http://`: use `https://` (the redirect drops the key) |
 | `401 unauthorized` | Wrong key type: the chatbot needs the `app-…` key, retrieval needs the `dataset-…` key |
 | `400 Workflow not published` | Click **Publish** in your Exercise 3 app |

@@ -1,6 +1,7 @@
 // Custom checks for Promptfoo. Each one receives the chatbot's answer (`output`) and the test
 // (`context.vars`), and returns { pass, score, reason }. Promptfoo shows the reason in its table.
 import { readFileSync } from 'node:fs';
+import { explainNetworkError } from './dify-chatbot.mjs';
 
 const golden = JSON.parse(readFileSync(new URL('../golden/jira-rest.json', import.meta.url), 'utf8'));
 const citationsOf = (context) => context.providerResponse?.metadata?.citations ?? [];
@@ -36,23 +37,28 @@ export function noInventedIssues(output, context) {
 async function judge(criterion, output, context) {
   const key = process.env.DIFY_JUDGE_KEY;
   if (!key) return result(true, 'Judge skipped: add DIFY_JUDGE_KEY to grade this');
-  const res = await fetch(`${process.env.DIFY_BASE_URL.replace(/\/+$/, '')}/workflows/run`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      inputs: {
-        criterion: golden.judge.criteria[criterion],
-        question: context.vars.question,
-        answer: output,
-        context: citationsOf(context).map((c) => c.content).join('\n\n---\n\n'),
-        reference: context.vars.reference ?? '',
-      },
-      response_mode: 'blocking',
-      user: 'qa-promptfoo',
-    }),
-    signal: AbortSignal.timeout(60_000),
-  });
-  const body = await res.json();
+  let res;
+  try {
+    res = await fetch(`${process.env.DIFY_BASE_URL.replace(/\/+$/, '')}/workflows/run`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        inputs: {
+          criterion: golden.judge.criteria[criterion],
+          question: context.vars.question,
+          answer: output,
+          context: citationsOf(context).map((c) => c.content).join('\n\n---\n\n'),
+          reference: context.vars.reference ?? '',
+        },
+        response_mode: 'blocking',
+        user: 'qa-promptfoo',
+      }),
+      signal: AbortSignal.timeout(60_000),
+    });
+  } catch (err) {
+    return result(false, `Judge (${criterion}): ${explainNetworkError(err)}`);
+  }
+  const body = await res.json().catch(() => ({}));
   const raw = body.data?.outputs?.result ?? '';
   try {
     const verdict = JSON.parse(raw.match(/\{[\s\S]*\}/)?.[0] ?? '');
