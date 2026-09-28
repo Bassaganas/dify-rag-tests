@@ -9,6 +9,7 @@ Follow the full walkthrough in the workshop docs: **Exercise 5 – Test your RAG
 | 2 – Chatbot | Answers mention the right facts, cite the right document, don't invent issues, refuse off-topic questions, are fast | Playwright (API only) | No |
 | 3 – LLM-as-a-judge | 3A: the judge grades answers whose verdict we know (calibration). 3B: the judge grades the chatbot's faithfulness, correctness and refusals | Playwright + a Dify judge workflow | Uses the model already configured in your Dify |
 | Adversarial | 22 questions designed to break the chatbot (similar issues, counting, false premises, prompt injection…). Red = finding. See [ADVERSARIAL.md](ADVERSARIAL.md) | Playwright (+ judge) | Optional |
+| Promptfoo (optional) | The Level 2–3 checks as a YAML test table; compares the Exercise 3 and Exercise 4 chatbots side by side | [Promptfoo](https://www.promptfoo.dev/) (+ judge) | No: grading uses the Dify judge |
 
 ## Run it from GitHub Actions (nothing to install)
 
@@ -18,7 +19,7 @@ you can see what changed after each tweak to your Exercise 3 chatbot.
 
 **One-time setup (5 minutes)**
 
-1. Click **Use this template → Create a new repository**. Make it **public** (GitHub Pages is free for public
+1. Sign in to GitHub, then click the green **Use this template** button (above the file list, on the right) → **Create a new repository**. Make it **public** (GitHub Pages is free for public
    repositories). Your keys stay private: they are stored as encrypted secrets, never in the code or the report.
 2. In your new repository go to **Settings → Secrets and variables → Actions → New repository secret** and add:
 
@@ -66,7 +67,30 @@ npm run report           # open the HTML report (port 9323)
 
 Level 3 needs the judge workflow: import `ex5_judge-1.16.1.yml` (download it from the Exercise 5 page) into Dify, publish it and put its API key in `DIFY_JUDGE_KEY`.
 
-Running locally instead? You need Node.js 20+ and then `npm ci`.
+Running locally instead? You need Node.js 22+ and then `npm ci`.
+
+## Promptfoo: compare chatbots side by side (optional)
+
+`promptfoo/promptfooconfig.yaml` holds the same chatbot checks as Levels 2–3, written as a
+[Promptfoo](https://www.promptfoo.dev/) test table: each test is a question plus a list of checks.
+Promptfoo asks every question to every chatbot and shows the answers side by side, which makes it easy to see
+whether a change (a new prompt, a new model, the Exercise 4 flow) is really better.
+
+```bash
+npm run promptfoo            # your Exercise 3 chatbot (DIFY_APP_KEY)
+npm run promptfoo:compare    # Exercise 3 and Exercise 4 side by side (also set DIFY_APP_KEY_EX4)
+npm run promptfoo:view       # open the results in your browser
+```
+
+From GitHub Actions: **Actions → Promptfoo → Run workflow** (tick **compare** and add the `DIFY_APP_KEY_EX4`
+secret to include Exercise 4). The run page shows a summary table, and the full report is published to your
+GitHub Pages site under `/promptfoo/run-<number>/`, next to the dashboard.
+
+- Promptfoo runs through `npx` on demand, so `npm ci` stays as fast as before if you don't use it.
+- `promptfoo/dify-chatbot.mjs` calls your chatbot and reads the URL and keys from the environment, so they never
+  appear in the report.
+- `promptfoo/checks.mjs` holds the citation checks and calls the same Dify judge as Level 3, with the criteria from
+  `golden/jira-rest.json`. Without `DIFY_JUDGE_KEY`, the judge checks are skipped.
 
 ## Where things live
 
@@ -77,6 +101,7 @@ tests/2-chatbot.spec.ts    Level 2 – POST /v1/chat-messages
 tests/3-judge.spec.ts      Level 3 – POST /v1/workflows/run (the judge workflow)
 tests/4-adversarial.spec.ts adversarial suite, cases in golden/adversarial.json
 tests/helpers/dify.ts      tiny API helpers
+promptfoo/                 the optional Promptfoo suite: config, Dify provider, checks, run summary
 ```
 
 Add a new test case by adding an entry to `golden/jira-rest.json` – no code needed.
@@ -86,6 +111,7 @@ Add a new test case by adding an entry to `golden/jira-rest.json` – no code ne
 | Symptom | Fix |
 |---|---|
 | Tests are **skipped** | A value in `.env` is missing or still a placeholder |
+| `401` *Authorization header must be provided* | `DIFY_BASE_URL` starts with `http://`: use `https://` (the redirect drops the key) |
 | `401 unauthorized` | Wrong key type: the chatbot needs the `app-…` key, retrieval needs the `dataset-…` key |
 | `400 Workflow not published` | Click **Publish** in your Exercise 3 app |
 | `404` on retrieve | `DIFY_DATASET_ID` is wrong – copy it from the knowledge base URL |
