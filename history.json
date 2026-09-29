@@ -362,5 +362,193 @@
     "error": ""
    }
   }
+ },
+ {
+  "run": 2,
+  "date": "2026-09-29T04:01:31.696Z",
+  "note": "new secrets – Exercise 4 chatbot",
+  "suite": "regression",
+  "repeat": 1,
+  "sha": "c38a825",
+  "actionsUrl": "https://github.com/Bassaganas/dify-rag-tests/actions/runs/36519584689",
+  "totals": {
+   "tests": 21,
+   "allPassed": 21,
+   "someFailed": 0,
+   "allFailed": 0,
+   "skipped": 0,
+   "runsPassed": 21,
+   "runsTotal": 21
+  },
+  "tests": {
+   "1-retrieval › exact issue wording finds REST-266 first": {
+    "suite": "Level 1 · Retrieval",
+    "title": "exact issue wording finds REST-266 first",
+    "passed": 1,
+    "failed": 0,
+    "answer": "",
+    "error": ""
+   },
+   "1-retrieval › natural question finds REST-266 first": {
+    "suite": "Level 1 · Retrieval",
+    "title": "natural question finds REST-266 first",
+    "passed": 1,
+    "failed": 0,
+    "answer": "",
+    "error": ""
+   },
+   "1-retrieval › unrelated question returns no chunks": {
+    "suite": "Level 1 · Retrieval",
+    "title": "unrelated question returns no chunks",
+    "passed": 1,
+    "failed": 0,
+    "answer": "",
+    "error": ""
+   },
+   "2-chatbot › grounded: explains what REST-266 is about": {
+    "suite": "Level 2 · Chatbot",
+    "title": "grounded: explains what REST-266 is about",
+    "passed": 1,
+    "failed": 0,
+    "answer": "REST-266: Default Jackson configuration is to error out on unknown properties  \nType: Bug  \nStatus: Not Being Considered  \nAssignee: Unassigned  \n\nThis issue addresses the problem where JSON deserialization into Java objects fails if the JSON contains unknown properties. The fix is to configure the Jackson JSON marshaller to ignore unknown properties by default, making the API more lenient and eas",
+    "error": ""
+   },
+   "2-chatbot › grounded: finds the Jackson unknown-properties issue": {
+    "suite": "Level 2 · Chatbot",
+    "title": "grounded: finds the Jackson unknown-properties issue",
+    "passed": 1,
+    "failed": 0,
+    "answer": "The issue about the default Jackson configuration erroring out on unknown properties is REST-266. It describes that when deserializing JSON into Java objects, the system should be lenient and ignore extra JSON properties instead of erroring out, which is the default Jackson behavior. The fix involves adding a line to DefaultJaxbJsonMarshaller to ignore unknown properties unless overridden by a plu",
+    "error": ""
+   },
+   "2-chatbot › grounded: finds the CORS preflight issue": {
+    "suite": "Level 2 · Chatbot",
+    "title": "grounded: finds the CORS preflight issue",
+    "passed": 1,
+    "failed": 0,
+    "answer": "The issue that reports that CORS preflight requests are not supported is REST-366. It describes that Jira does not support preflighted requests for CORS and does not respect the content of the Access-Control-Request-Method header, leading to errors in browsers when making cross-domain AJAX requests (REST-366).",
+    "error": ""
+   },
+   "2-chatbot › grounded: knows who reported REST-266": {
+    "suite": "Level 2 · Chatbot",
+    "title": "grounded: knows who reported REST-266",
+    "passed": 1,
+    "failed": 0,
+    "answer": "REST-266: Default Jackson configuration is to error out on unknown properties  \nType: Bug  \nStatus: Not Being Considered  \nAssignee: Unassigned  \nReporter: Luis Miranda  \n\nThis issue addresses the problem where JSON deserialization into Java objects fails if the JSON contains unknown properties. The fix proposes making the deserialization process more lenient by ignoring unknown JSON properties, w",
+    "error": ""
+   },
+   "2-chatbot › grounded: knows who is assigned to REST-432": {
+    "suite": "Level 2 · Chatbot",
+    "title": "grounded: knows who is assigned to REST-432",
+    "passed": 1,
+    "failed": 0,
+    "answer": "REST-432: workaround for bug in apache.commons-fileupload 1.4\nType: Task\nStatus: Short Term Backlog\nAssignee: Marek Tokarski\n\nThis issue addresses a bug in the apache.commons-fileupload 1.4 library (referenced as FILEUPLOAD-293) by applying a simple workaround. The fix prevents problems that occur when Atlassian REST uses the provided fileupload 1.4 version, ensuring smoother file upload handling.",
+    "error": ""
+   },
+   "2-chatbot › refusal: refuses a question outside the project": {
+    "suite": "Level 2 · Chatbot",
+    "title": "refusal: refuses a question outside the project",
+    "passed": 1,
+    "failed": 0,
+    "answer": "I'm sorry, I can't help with that: it isn't covered by the project documentation. I can help with questions about Jira issues, the project scope, test strategy, and Gherkin test cases. For example, you could ask, \"What is this project about?\"",
+    "error": ""
+   },
+   "2-chatbot › refusal: does not invent an issue that does not exist": {
+    "suite": "Level 2 · Chatbot",
+    "title": "refusal: does not invent an issue that does not exist",
+    "passed": 1,
+    "failed": 0,
+    "answer": "I'm sorry, I can't find REST-999 in the project documentation. Check the issue key and try again.",
+    "error": ""
+   },
+   "2-chatbot › error path: a wrong API key is rejected": {
+    "suite": "Level 2 · Chatbot",
+    "title": "error path: a wrong API key is rejected",
+    "passed": 1,
+    "failed": 0,
+    "answer": "",
+    "error": ""
+   },
+   "3-judge › faithfulness: faithful summary → PASS": {
+    "suite": "Level 3 · LLM judge",
+    "title": "faithfulness: faithful summary → PASS",
+    "passed": 1,
+    "failed": 0,
+    "answer": "",
+    "error": ""
+   },
+   "3-judge › faithfulness: invented assignee and fix → FAIL": {
+    "suite": "Level 3 · LLM judge",
+    "title": "faithfulness: invented assignee and fix → FAIL",
+    "passed": 1,
+    "failed": 0,
+    "answer": "",
+    "error": ""
+   },
+   "3-judge › correctness: correct reporter → PASS": {
+    "suite": "Level 3 · LLM judge",
+    "title": "correctness: correct reporter → PASS",
+    "passed": 1,
+    "failed": 0,
+    "answer": "",
+    "error": ""
+   },
+   "3-judge › correctness: wrong reporter → FAIL": {
+    "suite": "Level 3 · LLM judge",
+    "title": "correctness: wrong reporter → FAIL",
+    "passed": 1,
+    "failed": 0,
+    "answer": "",
+    "error": ""
+   },
+   "3-judge › refusal: polite refusal → PASS": {
+    "suite": "Level 3 · LLM judge",
+    "title": "refusal: polite refusal → PASS",
+    "passed": 1,
+    "failed": 0,
+    "answer": "",
+    "error": ""
+   },
+   "3-judge › refusal: answers from general knowledge → FAIL": {
+    "suite": "Level 3 · LLM judge",
+    "title": "refusal: answers from general knowledge → FAIL",
+    "passed": 1,
+    "failed": 0,
+    "answer": "",
+    "error": ""
+   },
+   "3-judge › faithfulness: summary of REST-266 is faithful": {
+    "suite": "Level 3 · LLM judge",
+    "title": "faithfulness: summary of REST-266 is faithful",
+    "passed": 1,
+    "failed": 0,
+    "answer": "REST-266: Default Jackson configuration is to error out on unknown properties\n\nType: Bug  \nStatus: Not Being Considered  \nAssignee: Unassigned  \n\nThis issue addresses the problem that when deserializing JSON into Java objects, the default Jackson configuration errors out if there are unknown properties in the JSON. The fix proposes making the deserialization process more lenient by ignoring unknow",
+    "error": ""
+   },
+   "3-judge › faithfulness: CORS answer is faithful": {
+    "suite": "Level 3 · LLM judge",
+    "title": "faithfulness: CORS answer is faithful",
+    "passed": 1,
+    "failed": 0,
+    "answer": "The issue that reports that CORS preflight requests are not supported is REST-366. It describes that Jira does not support preflighted requests for CORS and does not respect the content of the Access-Control-Request-Method header, leading to errors in browsers when making cross-domain AJAX requests with methods other than GET, HEAD, or POST (REST-366).",
+    "error": ""
+   },
+   "3-judge › correctness: reporter of REST-266 is correct": {
+    "suite": "Level 3 · LLM judge",
+    "title": "correctness: reporter of REST-266 is correct",
+    "passed": 1,
+    "failed": 0,
+    "answer": "REST-266: Default Jackson configuration is to error out on unknown properties  \nType: Bug  \nStatus: Not Being Considered  \nAssignee: Unassigned  \nReporter: Luis Miranda  \n\nThis issue addresses the problem where JSON deserialization into Java objects fails if there are unknown properties in the JSON. The fix is to make the deserialization process more lenient by ignoring any extra JSON properties t",
+    "error": ""
+   },
+   "3-judge › refusal: off-topic question is properly refused": {
+    "suite": "Level 3 · LLM judge",
+    "title": "refusal: off-topic question is properly refused",
+    "passed": 1,
+    "failed": 0,
+    "answer": "I'm sorry, I can't help with that: it isn't covered by the project documentation. However, I can assist you with questions about Jira issues, project scope, test strategy, and Gherkin test cases. For example, you could ask, \"What is this project about?\"",
+    "error": ""
+   }
+  }
  }
 ]
