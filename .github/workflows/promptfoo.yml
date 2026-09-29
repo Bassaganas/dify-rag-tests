@@ -69,7 +69,7 @@ jobs:
         run: |
           filter=""
           [ "$COMPARE" = "true" ] || filter="--filter-providers Exercise.3"
-          npm run promptfoo:ci -- $filter --repeat "$REPEAT" -o promptfoo-results.json promptfoo-report.html
+          npm run promptfoo:ci --repeat "$REPEAT" -o promptfoo-results.json promptfoo-report.html
         env:
           COMPARE: ${{ inputs.compare }}
           REPEAT: ${{ inputs.repeat }}
