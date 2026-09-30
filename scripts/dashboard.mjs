@@ -26,6 +26,7 @@ history.push({
   repeat: Number(env.RUN_REPEAT ?? 1),
   sha: (env.GITHUB_SHA ?? '').slice(0, 7),
   actionsUrl: env.RUN_URL ?? '',
+  advice: env.ADVICE_FILE && existsSync(env.ADVICE_FILE) ? readFileSync(env.ADVICE_FILE, 'utf8').trim().slice(0, 8000) : '',
   totals,
   tests: Object.fromEntries(
     rows.map((r) => [r.key, { suite: r.suite, title: r.title, passed: r.passed, failed: r.failed, answer: (r.failedAnswer || r.answer).slice(0, 400), error: r.error.slice(0, 200) }]),
@@ -64,6 +65,10 @@ td.test{min-width:260px;max-width:420px}tr.suite td{background:var(--bg);font-we
 td.c{text-align:center;font-weight:600;cursor:help;border-left:2px solid var(--card)}
 .p{background:var(--pass-bg);color:var(--pass)}.w{background:var(--warn-bg);color:var(--warn)}.f{background:var(--fail-bg);color:var(--fail)}.s{background:var(--skip-bg);color:var(--muted)}
 .legend span{display:inline-block;padding:1px 8px;border-radius:6px;margin-right:6px;font-size:.8rem}
+.advice{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:6px 20px 14px}
+.advice h3{font-size:1rem;margin:16px 0 6px}.advice p,.advice li{margin:4px 0}.advice ol,.advice ul{padding-left:22px}
+.advice .by{font-size:.8rem;color:var(--muted);margin-top:10px}
+details.past{margin-top:8px}details.past summary{cursor:pointer;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -71,6 +76,7 @@ td.c{text-align:center;font-weight:600;cursor:help;border-left:2px solid var(--c
 <h1>🧪 RAG Test Dashboard</h1>
 <div class="muted">Every run of the GitHub Action against your Dify chatbot. Change something in Exercise 3, run the workflow again, and compare the columns.</div>
 <div id="latest"></div>
+<div id="advice"></div>
 <h2>Pass rate per run</h2>
 <svg id="trend" role="img" aria-label="Percentage of passed test runs per workflow run"></svg>
 <h2>Every test, every run</h2>
@@ -94,6 +100,28 @@ if (latest) {
     '<div class="card"><b style="color:var(--warn)">' + t.someFailed + '</b><span>flaky (passed sometimes)</span></div>' +
     '<div class="card"><b style="color:var(--fail)">' + t.allFailed + '</b><span>always failed</span></div>' +
     '<div class="card"><b>' + pct(latest) + '%</b><span>' + t.runsPassed + ' of ' + t.runsTotal + ' executions passed</span></div></div>';
+}
+// AI recommendations (Markdown from the Test Advisor, rendered safely: text is escaped first)
+const md = (text) => {
+  const out = []; let list = '';
+  const inline = (t) => esc(t).replace(/\\*\\*(.+?)\\*\\*/g, '<b>$1</b>').replace(/\\u0060(.+?)\\u0060/g, '<code>$1</code>');
+  const close = () => { if (list) { out.push('</' + list + '>'); list = ''; } };
+  for (const line of String(text).split('\\n')) {
+    const h = line.match(/^#{1,4}\\s+(.*)/), ol = line.match(/^\\s*\\d+\\.\\s+(.*)/), ul = line.match(/^\\s*[-*]\\s+(.*)/);
+    if (h) { close(); out.push('<h3>' + inline(h[1]) + '</h3>'); }
+    else if (ol || ul) { const tag = ol ? 'ol' : 'ul'; if (list !== tag) { close(); out.push('<' + tag + '>'); list = tag; } out.push('<li>' + inline((ol || ul)[1]) + '</li>'); }
+    else if (line.trim()) { close(); out.push('<p>' + inline(line) + '</p>'); }
+  }
+  close(); return out.join('');
+};
+const withAdvice = runs.filter((r) => r.advice);
+if (withAdvice.length) {
+  const a = withAdvice.at(-1);
+  let h = '<h2>🧭 AI recommendations</h2><div class="advice">' + md(a.advice) +
+    '<div class="by">Written by the Exercise 5 Test Advisor (an LLM in your Dify) for run #' + a.run + '. Check the evidence before acting on it.</div>';
+  const past = withAdvice.slice(0, -1).reverse();
+  if (past.length) h += past.map((r) => '<details class="past"><summary>Recommendations for run #' + r.run + ' – ' + esc(r.note) + '</summary>' + md(r.advice) + '</details>').join('');
+  document.getElementById('advice').innerHTML = h + '</div>';
 }
 // Trend line
 const svg = document.getElementById('trend');

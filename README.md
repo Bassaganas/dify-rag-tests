@@ -29,7 +29,11 @@ you can see what changed after each tweak to your Exercise 3 chatbot.
    | `DIFY_APP_KEY` | App API key of your Exercise 3 chatbot (`app-…`) |
    | `DIFY_DATASET_KEY` | Knowledge API key (`dataset-…`) |
    | `DIFY_DATASET_ID` | ID of your `Jira_API_*` knowledge base |
-   | `DIFY_JUDGE_KEY` | Optional: API key of the Exercise 5 judge workflow (`app-…`) |
+   | `DIFY_JUDGE_KEY` | Optional: API key of the judge workflow (`app-…`) – import [`dify/ex5_judge.yml`](dify/ex5_judge.yml) |
+   | `DIFY_ADVISOR_KEY` | Optional: API key of the Test Advisor workflow (`app-…`) – import [`dify/ex5_advisor.yml`](dify/ex5_advisor.yml) |
+
+   For the two optional workflows: in Dify go to **Studio → Import DSL file**, import the file, check the model
+   in its LLM node, **Publish**, then **API Access → Create new Secret key**.
 
 3. Go to **Actions → RAG tests → Run workflow**. Describe what you are testing (for example `baseline`),
    pick the suite and click **Run workflow**.
@@ -45,7 +49,10 @@ run the workflow again with a note describing the change. Then look at:
 - the **run page** – a summary table with every test and the chatbot's answer;
 - the **dashboard** – one column per run, so you see which tests turned green or red;
 - the **Playwright report** of each run (linked from the dashboard) – every Given/When/Then step, the answer,
-  and the judge's reasoning.
+  and the judge's reasoning;
+- the **AI recommendations** (if `DIFY_ADVISOR_KEY` is set) – an LLM in your Dify reads the results, compares
+  them with your previous run and suggests what to change next, citing the tests as evidence. Treat them as a
+  colleague's opinion: check the evidence before acting.
 
 Only the regression suite decides whether the run is green or red: red tests in the adversarial suite are
 findings about your chatbot, not errors.
