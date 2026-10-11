@@ -1,0 +1,276 @@
+app:
+  description: 'Test Advisor for Exercise 5: reads the results of a RAG test run and recommends what to change in the chatbot'
+  icon: 🧭
+  icon_background: '#EDE9FE'
+  icon_type: emoji
+  mode: workflow
+  name: 'Exercise 5: Test Advisor'
+  use_icon_as_answer_icon: false
+dependencies:
+- current_identifier: null
+  type: marketplace
+  value:
+    marketplace_plugin_unique_identifier: langgenius/azure_openai:0.0.69@c744f6bf60699c296307a4420094a7f88b4f6e7fdf353b67b2b88ddb455074b2
+    version: null
+kind: app
+version: 0.7.0
+workflow:
+  conversation_variables: []
+  environment_variables: []
+  features:
+    file_upload:
+      enabled: false
+    opening_statement: ''
+    retriever_resource:
+      enabled: false
+    sensitive_word_avoidance:
+      enabled: false
+    speech_to_text:
+      enabled: false
+    suggested_questions: []
+    suggested_questions_after_answer:
+      enabled: false
+    text_to_speech:
+      enabled: false
+      language: ''
+      voice: ''
+  graph:
+    edges:
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: start
+        targetType: llm
+      id: start-source-advisor-target
+      source: start
+      sourceHandle: source
+      target: advisor
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: llm
+        targetType: end
+      id: advisor-source-end-target
+      source: advisor
+      sourceHandle: source
+      target: end
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    nodes:
+    - data:
+        desc: What the GitHub Action sends after a test run
+        selected: false
+        title: Start
+        type: start
+        variables:
+        - label: results
+          max_length: 100000
+          options: []
+          required: true
+          type: paragraph
+          variable: results
+        - label: change_note
+          max_length: 1000
+          options: []
+          required: false
+          type: paragraph
+          variable: change_note
+        - label: previous_run
+          max_length: 20000
+          options: []
+          required: false
+          type: paragraph
+          variable: previous_run
+      height: 142
+      id: start
+      position:
+        x: 80
+        y: 280
+      positionAbsolute:
+        x: 80
+        y: 280
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        context:
+          enabled: false
+          variable_selector: []
+        desc: Diagnoses failures (retrieval vs generation vs data vs judge) and recommends concrete Dify changes. Temperature 0.
+        model:
+          completion_params:
+            temperature: 0
+          mode: chat
+          name: gpt-35-turbo-16k
+          provider: langgenius/azure_openai/azure_openai
+        prompt_template:
+        - id: advisor-system
+          role: system
+          text: 'You are a senior QA engineer who specialises in testing RAG chatbots.
+            You receive the results of an automated test run against a Dify chatbot
+            that answers questions about 23 Jira issues of the REST project, using a
+            Knowledge Retrieval node (top-K chunks above a score threshold) followed
+            by an LLM node. Your job: explain what the results say and recommend what
+            the student should change in Dify next.
+
+
+            TEST SUITES
+
+            - Level 1 Retrieval: searches the knowledge base directly, no LLM. Fails
+            = data/indexing problem.
+
+            - Level 2 Chatbot: real questions; checks facts, citations, invented issue
+            keys, refusals, latency.
+
+            - Level 3 LLM judge: 3A calibrates the judge on known answers, 3B lets the
+            judge grade the chatbot.
+
+            - Adversarial: questions designed to break a RAG system. A failure here is
+            a finding, not a broken test.
+
+
+            DIAGNOSTIC PLAYBOOK (symptom -> likely cause -> change in Dify)
+
+            1. Level 1 retrieval fails -> documents missing, not indexed or badly chunked
+            -> check all documents are Available, check chunking. A model change will
+            not help.
+
+            2. "cites the document" fails with nothing cited -> LLM node Context not
+            bound to the Knowledge Retrieval result, or score threshold too high.
+
+            3. The right document is cited but the answer names another issue -> generation
+            error between similar documents -> stronger model, or a prompt rule to
+            compare all cited issues before answering.
+
+            4. "List all", "how many", "oldest", negation questions give partial answers
+            -> the model only sees the top-K chunks, never all 23 issues -> add an index
+            document with pre-computed totals, or metadata filtering, or route these
+            questions to a structured source. Raising top-K alone is not enough.
+
+            5. Counts off by one or two although an index is retrieved -> the model counts
+            badly or double-counts rows from other documents -> pre-computed totals and
+            a rule "use the totals, do not count yourself".
+
+            6. Questions about a person return nothing -> a name is a weak search signal
+            below the score threshold -> metadata filtering on reporter/assignee, a lower
+            threshold, or more keyword weight in hybrid search.
+
+            7. Off-topic or prompt-injection questions get a real answer -> the refusal
+            rule in the system prompt is too weak.
+
+            8. False premises are accepted -> add a prompt rule to correct wrong
+            assumptions with the facts from the context.
+
+            9. Level 3A judge calibration fails -> do NOT trust Level 3B; fix the judge
+            first (clearer criterion or stronger judge model).
+
+            10. A test passes only sometimes -> non-determinism; judge by the failing
+            answers, recommend repeat=3 and lower temperature.
+
+            11. Latency failures -> model or answer size; consider a faster model.
+
+
+            RULES
+
+            - Base every statement on the results you were given. Cite test IDs or names
+            and pass counts (for example "A4 0/3"). Never invent tests, numbers or answers.
+
+            - If a previous run is given, say what improved or regressed since then and
+            relate it to the change note.
+
+            - Say which layer each problem is in: retrieval, generation, data, prompt or
+            judge.
+
+            - Recommend at most 4 changes, most impactful first, each small enough to test
+            in one run. Say which tests should change if the recommendation works.
+
+            - If the evidence is not enough to be sure, say so.
+
+            - Do not recommend changing the tests to make them pass.
+
+
+            OUTPUT (Markdown, English, under 350 words):
+
+            ### Verdict
+
+            2 sentences.
+
+            ### What changed since the previous run
+
+            (skip if there is no previous run)
+
+            ### Recommendations
+
+            1. **Title** – Evidence: … Layer: … Change in Dify: … Expect: …
+
+            ### Working well
+
+            One line.'
+        - id: advisor-user
+          role: user
+          text: 'CHANGE NOTE (what the student changed before this run):
+
+            {{#start.change_note#}}
+
+
+            PREVIOUS RUN:
+
+            {{#start.previous_run#}}
+
+
+            RESULTS OF THIS RUN:
+
+            {{#start.results#}}'
+        selected: false
+        title: Advisor
+        type: llm
+        variables: []
+        vision:
+          enabled: false
+      height: 98
+      id: advisor
+      position:
+        x: 400
+        y: 280
+      positionAbsolute:
+        x: 400
+        y: 280
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        desc: ''
+        outputs:
+        - value_selector:
+          - advisor
+          - text
+          value_type: string
+          variable: result
+        selected: false
+        title: End
+        type: end
+      height: 90
+      id: end
+      position:
+        x: 720
+        y: 280
+      positionAbsolute:
+        x: 720
+        y: 280
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    viewport:
+      x: 0
+      y: 0
+      zoom: 1

@@ -20,7 +20,10 @@ out.push(
     `**${totals.someFailed}** flaky · **${totals.allFailed}** failed · ${totals.skipped} skipped · ` +
     `${totals.runsPassed}/${totals.runsTotal} runs passed · ${durationSeconds}s`,
 );
-if (dashboardUrl) out.push('', `📊 **[Open the dashboard with all your runs](${dashboardUrl})**`);
+if (dashboardUrl) {
+  out.push('', `📊 **[Open the dashboard with all your runs](${dashboardUrl})**`);
+  out.push('', '<sub>Dashboard gives a 404? Turn on GitHub Pages once: <b>Settings → Pages → Deploy from a branch → <code>gh-pages</code> / <code>(root)</code></b>, then wait a minute.</sub>');
+}
 out.push('', '> Red tests in the **Adversarial** suite are findings about your chatbot, not broken tests.', '');
 
 for (const suite of [...new Set(rows.map((r) => r.suite))]) {
