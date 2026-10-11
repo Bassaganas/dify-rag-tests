@@ -5,6 +5,24 @@ import { APIRequestContext, expect, test } from '@playwright/test';
 //       https://docs.dify.ai/en/api-reference/knowledge-bases/retrieve-chunks-from-a-knowledge-base-test-retrieval
 
 const BASE_URL = (process.env.DIFY_BASE_URL ?? '').replace(/\/+$/, '');
+
+/**
+ * A lab on the internet answers a program only if every request carries the lab's capability in
+ * the `X-Lab-Capability` header. It is the "Lab capability" on the "API address for programs" card
+ * of the lab, and it is a secret, like the keys: it goes in `.env` or in a repository secret, as
+ * `DIFY_LAB_CAPABILITY`. A Dify on your own machine needs none: leave the setting empty.
+ *
+ * The value is checked here, before any request, and never printed: an error that quoted it would
+ * put it in the report. That is also why it travels in a header and not in the address.
+ */
+export function labHeaders(value = process.env.DIFY_LAB_CAPABILITY): Record<string, string> {
+  const capability = (value ?? '').trim();
+  if (capability === '') return {};
+  if (!/^[A-Za-z0-9_-]{16,128}$/.test(capability)) {
+    throw new Error('DIFY_LAB_CAPABILITY is set but is not a lab capability: copy it again, whole, from the card');
+  }
+  return { 'X-Lab-Capability': capability };
+}
 const TEST_USER = 'qa-e2e'; // Dify requires a `user`; one fixed value keeps test conversations together
 
 export type Citation = { document_name: string; content: string; score: number; position: number };
@@ -45,13 +63,17 @@ async function isTemporaryError(res: ApiResponse) {
 export type ApiResponse = { status(): number; text(): Promise<string>; json(): Promise<any> };
 
 // We call Dify with Node's fetch instead of Playwright's `request` on purpose: Playwright would list
-// every call with its full URL in the HTML report, and that report is published on GitHub Pages.
-// This way your Dify address never appears in the public report. (`request` is kept in the signatures
-// so the tests read like normal Playwright API tests.)
+// every call in the HTML report, and a trace of it would hold every request header: your keys and
+// your lab's capability. That report is published on GitHub Pages. This way nothing of a request
+// reaches the public report: not the address, not a key, not the capability. If a call cannot
+// connect at all, the report shows the host it could not connect to, which is not a secret.
+// (`request` is kept in the signatures so the tests read like normal Playwright API tests.)
+// Do not switch these calls to `request`, and do not turn on Playwright traces, in a repository
+// whose report is public.
 async function send(path: string, key: string, data: object): Promise<ApiResponse> {
   const res = await fetch(`${BASE_URL}${path}`, {
     method: 'POST',
-    headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+    headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json', ...labHeaders() },
     body: JSON.stringify(data),
     signal: AbortSignal.timeout(60_000),
   });

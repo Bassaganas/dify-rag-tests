@@ -38,6 +38,8 @@ jobs:
       DIFY_DATASET_ID: ${{ secrets.DIFY_DATASET_ID }}
       DIFY_JUDGE_KEY: ${{ secrets.DIFY_JUDGE_KEY }}
       DIFY_ADVISOR_KEY: ${{ secrets.DIFY_ADVISOR_KEY }}
+      # Only for a lab on the internet: the "Lab capability" from the lab's card. Empty otherwise.
+      DIFY_LAB_CAPABILITY: ${{ secrets.DIFY_LAB_CAPABILITY }}
       DASHBOARD_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/
     steps:
       - uses: actions/checkout@v7
@@ -62,6 +64,7 @@ jobs:
           fi
           [ -z "$DIFY_JUDGE_KEY" ] && echo "::notice title=Judge not configured::Add DIFY_JUDGE_KEY to run the LLM-as-a-judge tests" || true
           [ -z "$DIFY_ADVISOR_KEY" ] && echo "::notice title=Advisor not configured::Add DIFY_ADVISOR_KEY to get AI recommendations" || true
+          [ -z "$DIFY_LAB_CAPABILITY" ] && echo "::notice title=No lab capability::If every call answers 404 Not found, add DIFY_LAB_CAPABILITY (the Lab capability from your lab's card)" || true
 
       - name: Run tests
         id: tests

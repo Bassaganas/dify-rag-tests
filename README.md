@@ -24,7 +24,8 @@ you can see what changed after each tweak to your Exercise 3 chatbot.
 
    | Secret | Value |
    |---|---|
-   | `DIFY_BASE_URL` | `https://dify-<your-instance>.testingfantasy.com/v1` |
+   | `DIFY_BASE_URL` | The API base URL of your Dify, ending in `/v1`: the **Service API address** on your lab's **API address for programs** card. Not a secret |
+   | `DIFY_LAB_CAPABILITY` | Only for a lab on the internet: the **Lab capability** from the same card. A secret: if it gets out, close the lab. Leave it out for a Dify on your own machine |
    | `DIFY_APP_KEY` | App API key of your Exercise 3 chatbot (`app-…`) |
    | `DIFY_DATASET_KEY` | Knowledge API key (`dataset-…`) |
    | `DIFY_DATASET_ID` | ID of your `Jira_API_*` knowledge base |
@@ -96,6 +97,7 @@ Add a new test case by adding an entry to `golden/jira-rest.json` – no code ne
 | `401 unauthorized` | Wrong key type: the chatbot needs the `app-…` key, retrieval needs the `dataset-…` key |
 | `400 Workflow not published` | Click **Publish** in your Exercise 3 app |
 | `404` on retrieve | `DIFY_DATASET_ID` is wrong – copy it from the knowledge base URL |
+| Every call answers `404` with the two words `Not found` | That is your lab's door, not Dify: `DIFY_LAB_CAPABILITY` is missing, cut short, or belongs to a lab that has closed |
 | No citations | In the app, the LLM node's **Context** must be the Knowledge Retrieval result |
 | `429` or rate-limit errors | The tests already wait and retry; if it persists, wait a minute and re-run |
 | `Judge workflow failed` | Check the judge is published and its Judge node has a model configured |

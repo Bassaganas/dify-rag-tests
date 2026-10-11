@@ -2,6 +2,7 @@
 // Dify workflow and prints its Markdown recommendations.
 //   node scripts/advise.mjs results.json [previous-history.json] [change note] > advice.md
 // Needs DIFY_BASE_URL and DIFY_ADVISOR_KEY. Without DIFY_ADVISOR_KEY it prints nothing.
+// Sends DIFY_LAB_CAPABILITY as the X-Lab-Capability header when it is set (a lab on the internet).
 import { existsSync, readFileSync } from 'node:fs';
 import { readResults } from './results.mjs';
 
@@ -9,6 +10,13 @@ const [file = 'results.json', historyFile = '', note = ''] = process.argv.slice(
 const BASE_URL = process.env.DIFY_BASE_URL ?? '';
 const KEY = process.env.DIFY_ADVISOR_KEY;
 const DRY_RUN = process.env.ADVISOR_DRY_RUN === '1'; // print what would be sent, without calling Dify
+// The same rule as tests/helpers/dify.ts: checked before any request, and never printed.
+const CAPABILITY = (process.env.DIFY_LAB_CAPABILITY ?? '').trim();
+if (CAPABILITY !== '' && !/^[A-Za-z0-9_-]{16,128}$/.test(CAPABILITY)) {
+  console.error('DIFY_LAB_CAPABILITY is set but is not a lab capability: copy it again, whole, from the card');
+  process.exit(1);
+}
+const LAB_HEADERS = CAPABILITY === '' ? {} : { 'X-Lab-Capability': CAPABILITY };
 if (!KEY && !DRY_RUN) process.exit(0);
 
 const clip = (s, n) => {
@@ -63,7 +71,7 @@ if (DRY_RUN) {
 // 3. Ask the advisor (a Dify workflow on the student's own instance)
 const res = await fetch(`${BASE_URL.replace(/\/+$/, '')}/workflows/run`, {
   method: 'POST',
-  headers: { Authorization: `Bearer ${KEY}`, 'Content-Type': 'application/json' },
+  headers: { Authorization: `Bearer ${KEY}`, 'Content-Type': 'application/json', ...LAB_HEADERS },
   body: JSON.stringify({
     inputs: { results: lines.join('\n').slice(0, 95_000), previous_run: previous.slice(0, 19_000), change_note: note.slice(0, 900) },
     response_mode: 'blocking',
